@@ -22,6 +22,8 @@ namespace Riptide
         Unreliable = MessageHeader.Unreliable,
         /// <summary>Guarantees delivery but not order.</summary>
         Reliable = MessageHeader.Reliable,
+        /// <summary>Guarantees both delivery and order. </summary>
+        Ordered = MessageHeader.Ordered,
     }
 
     /// <summary>Provides functionality for converting data to bytes and vice versa.</summary>
@@ -39,6 +41,9 @@ namespace Riptide
         /// <summary>The header size for reliable messages. Does not count the 2 bytes used for the message ID.</summary>
         /// <remarks>4 bits - header, 16 bits - sequence ID.</remarks>
         internal const int ReliableHeaderBits = HeaderBits + 2 * BitsPerByte;
+        /// <summary>The header size for ordered messages. Does not count the 2 bytes used for the message ID.</summary>
+        /// <remarks>4 bits - header, 16 bits - sequence ID, 8 bits - order stamp.</remarks>
+        internal const int OrderedHeaderBits = HeaderBits + 3 * BitsPerByte;
         /// <summary>The header size for notify messages.</summary>
         /// <remarks>4 bits - header, 24 bits - ack, 16 bits - sequence ID.</remarks>
         internal const int NotifyHeaderBits = HeaderBits + 5 * BitsPerByte;
@@ -46,6 +51,8 @@ namespace Riptide
         internal const int MinUnreliableBytes = UnreliableHeaderBits / BitsPerByte + (UnreliableHeaderBits % BitsPerByte == 0 ? 0 : 1);
         /// <summary>The minimum number of bytes contained in a reliable message.</summary>
         internal const int MinReliableBytes = ReliableHeaderBits / BitsPerByte + (ReliableHeaderBits % BitsPerByte == 0 ? 0 : 1);
+        /// <summary>The minimum number of bytes contained in an ordered message.</summary>
+        internal const int MinOrderedBytes = OrderedHeaderBits / BitsPerByte + (OrderedHeaderBits % BitsPerByte == 0 ? 0 : 1);
         /// <summary>The minimum number of bytes contained in a notify message.</summary>
         internal const int MinNotifyBytes = NotifyHeaderBits / BitsPerByte + (NotifyHeaderBits % BitsPerByte == 0 ? 0 : 1);
         /// <summary>The number of bits in a byte.</summary>
@@ -81,6 +88,13 @@ namespace Riptide
         private static int maxBitCount;
         /// <summary>The maximum size of the <see cref="data"/> array.</summary>
         private static int maxArraySize;
+
+        /// <summary>The amount of ordered messages currently queued.</summary>
+        private static byte orderedMessagesQueued;
+
+        /// <summary>The order stamp of the message.</summary>
+        /// <remarks>Converted from a byte to an int. Shows in what order the message should be processed.</remarks>
+        public int OrderStamp;
 
         /// <summary>How many messages to add to the pool for each <see cref="Server"/> or <see cref="Client"/> instance that is started.</summary>
         /// <remarks>Changes will not affect <see cref="Server"/> and <see cref="Client"/> instances which are already running until they are restarted.</remarks>
@@ -151,6 +165,9 @@ namespace Riptide
         /// <returns>A message instance ready to be sent.</returns>
         public static Message Create(MessageSendMode sendMode, ushort id)
         {
+            if (sendMode == MessageSendMode.Ordered)
+                return RetrieveFromPool().Init((MessageHeader)sendMode).AddVarULong(id).AddByte(orderedMessagesQueued);
+            
             return RetrieveFromPool().Init((MessageHeader)sendMode).AddVarULong(id);
         }
         /// <inheritdoc cref="Create(MessageSendMode, ushort)"/>
@@ -246,7 +263,13 @@ namespace Riptide
         /// <param name="header">The header to use for this message.</param>
         private void SetHeader(MessageHeader header)
         {
-            if (header == MessageHeader.Notify)
+            if (header == MessageHeader.Ordered)
+            {
+                readBit = OrderedHeaderBits;
+                writeBit = OrderedHeaderBits;
+                SendMode = MessageSendMode.Ordered;
+            }
+            else if (header == MessageHeader.Notify)
             {
                 readBit = NotifyHeaderBits;
                 writeBit = NotifyHeaderBits;

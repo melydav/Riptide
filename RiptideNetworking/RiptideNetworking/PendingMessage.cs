@@ -17,7 +17,7 @@ namespace Riptide
         internal long LastSendTime { get; private set; }
 
         /// <summary>The multiplier used to determine how long to wait before resending a pending message.</summary>
-        private const float RetryTimeMultiplier = 1.2f;
+        private const float RetryTimeMultiplier = 1.1f;
 
         /// <summary>A pool of reusable <see cref="PendingMessage"/> instances.</summary>
         private static readonly List<PendingMessage> pool = new List<PendingMessage>();

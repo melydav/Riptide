@@ -75,7 +75,7 @@ namespace Riptide
         /// <summary>Whether or not the peer should use the built-in message handler system.</summary>
         protected bool useMessageHandlers;
         /// <summary>The default time (in milliseconds) after which to disconnect if no heartbeats are received.</summary>
-        protected int defaultTimeout = 5000;
+        protected int defaultTimeout = 12500;
 
         /// <summary>A stopwatch used to track how much time has passed.</summary>
         private readonly System.Diagnostics.Stopwatch time = new System.Diagnostics.Stopwatch();
@@ -174,6 +174,20 @@ namespace Riptide
 
                 messagesToHandle.Enqueue(new MessageToHandle(message, header, e.FromConnection));
                 e.FromConnection.Metrics.ReceivedUnreliable(e.Amount);
+            }
+            else if (message.SendMode == MessageSendMode.Ordered)
+            {
+                if (e.Amount < Message.MinOrderedBytes)
+                    return;
+
+                e.FromConnection.Metrics.ReceivedReliable(e.Amount);
+                if (e.FromConnection.ShouldHandle(Converter.UShortFromBits(e.DataBuffer, Message.HeaderBits)))
+                {
+                    Buffer.BlockCopy(e.DataBuffer, 1, message.Data, 1, e.Amount - 1);
+                    messagesToHandle.Enqueue(new MessageToHandle(message, header, e.FromConnection));
+                }
+                else
+                    e.FromConnection.Metrics.ReliableDiscarded++;
             }
             else
             {

@@ -50,22 +50,22 @@ namespace Riptide.Utils
         /// <summary>The loss rate (0-1) among the last 64 notify messages.</summary>
         public float RollingNotifyLossRate => RollingNotifyLost / 64f;
 
-        /// <summary>The total number of bytes received in reliable messages since the last <see cref="Reset"/> call, including those in duplicate packets.
+        /// <summary>The total number of bytes received in reliable and ordered messages since the last <see cref="Reset"/> call, including those in duplicate packets.
         /// Does <i>not</i> include packet header bytes, which may vary by transport.</summary>
         public int ReliableBytesIn { get; private set; }
-        /// <summary>The total number of bytes sent in reliable messages since the last <see cref="Reset"/> call, including those in automatic resends.
+        /// <summary>The total number of bytes sent in reliable and ordered messages since the last <see cref="Reset"/> call, including those in automatic resends.
         /// Does <i>not</i> include packet header bytes, which may vary by transport.</summary>
         public int ReliableBytesOut { get; internal set; }
-        /// <summary>The number of reliable messages received since the last <see cref="Reset"/> call, including duplicates.</summary>
+        /// <summary>The number of reliable and ordered messages received since the last <see cref="Reset"/> call, including duplicates.</summary>
         public int ReliableIn { get; private set; }
-        /// <summary>The number of reliable messages sent since the last <see cref="Reset"/> call, including automatic resends (each resend adds to this value).</summary>
+        /// <summary>The number of reliable and ordered messages sent since the last <see cref="Reset"/> call, including automatic resends (each resend adds to this value).</summary>
         public int ReliableOut { get; internal set; }
-        /// <summary>The number of duplicate reliable messages which were received, but discarded (and not handled) since the last <see cref="Reset"/> call.</summary>
+        /// <summary>The number of duplicate reliable or ordered messages which were received, but discarded (and not handled) since the last <see cref="Reset"/> call.</summary>
         public int ReliableDiscarded { get; internal set; }
-        /// <summary>The number of unique reliable messages sent since the last <see cref="Reset"/> call.
+        /// <summary>The number of unique reliable and ordered messages sent since the last <see cref="Reset"/> call.
         /// A message only counts towards this the first time it is sent—subsequent resends are not counted.</summary>
         public int ReliableUniques { get; internal set; }
-        /// <summary>The number of send attempts that were required to deliver recent reliable messages.</summary>
+        /// <summary>The number of send attempts that were required to deliver recent reliable or ordered messages.</summary>
         public readonly RollingStat RollingReliableSends;
 
         /// <summary>The left-most bit of a <see cref="ulong"/>, used to store the oldest value in the <see cref="notifyLossTracker"/>.</summary>

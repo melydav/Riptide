@@ -329,19 +329,19 @@ namespace Riptide
         }
 
         #region Server
-        /// <summary>Sends a welcome message.</summary>
-        internal void SendWelcome()
+        /// <summary>Sends a hello message.</summary>
+        internal void SendHello()
         {
-            Message message = Message.Create(MessageHeader.Welcome);
+            Message message = Message.Create(MessageHeader.Hello);
             message.AddUShort(Id);
 
             Send(message);
         }
 
-        /// <summary>Handles a welcome message on the server.</summary>
-        /// <param name="message">The welcome message to handle.</param>
+        /// <summary>Handles a hello message on the server.</summary>
+        /// <param name="message">The hello message to handle.</param>
         /// <returns>Whether or not the connection is now connected.</returns>
-        internal bool HandleWelcomeResponse(Message message)
+        internal bool HandleHelloResponse(Message message)
         {
             if (!IsPending)
                 return false;
@@ -393,7 +393,7 @@ namespace Riptide
         /// <summary>Sends a welcome response message.</summary>
         private void RespondWelcome()
         {
-            Message message = Message.Create(MessageHeader.Welcome);
+            Message message = Message.Create(MessageHeader.Hello);
             message.AddUShort(Id);
 
             Send(message);

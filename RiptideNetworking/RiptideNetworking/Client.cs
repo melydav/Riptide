@@ -252,6 +252,7 @@ namespace Riptide
                 // User messages
                 case MessageHeader.Unreliable:
                 case MessageHeader.Reliable:
+                case MessageHeader.Ordered:
                     OnMessageReceived(message);
                     break;
 
@@ -272,7 +273,7 @@ namespace Riptide
                 case MessageHeader.Disconnect:
                     LocalDisconnect((DisconnectReason)message.GetByte(), message);
                     break;
-                case MessageHeader.Welcome:
+                case MessageHeader.Hello:
                     if (IsConnecting || IsPending)
                     {
                         connection.HandleWelcome(message);
@@ -381,6 +382,8 @@ namespace Riptide
         protected virtual void OnMessageReceived(Message message)
         {
             ushort messageId = (ushort)message.GetVarULong();
+            message.OrderStamp = message.SendMode == MessageSendMode.Ordered ? (int)message.GetByte() : 0;
+            
             MessageReceived?.Invoke(this, new MessageReceivedEventArgs(connection, messageId, message));
 
             if (useMessageHandlers)

@@ -241,7 +241,7 @@ namespace Riptide
                     connection.Id = clientId;
                     clients.Add(clientId, connection);
                     connection.ResetTimeout();
-                    connection.SendWelcome();
+                    connection.SendHello();
                     return;
                 }
                 else
@@ -316,6 +316,7 @@ namespace Riptide
                 // User messages
                 case MessageHeader.Unreliable:
                 case MessageHeader.Reliable:
+                case MessageHeader.Ordered:
                     OnMessageReceived(message, connection);
                     break;
 
@@ -332,8 +333,8 @@ namespace Riptide
                 case MessageHeader.Disconnect:
                     LocalDisconnect(connection, DisconnectReason.Disconnected);
                     break;
-                case MessageHeader.Welcome:
-                    if (connection.HandleWelcomeResponse(message))
+                case MessageHeader.Hello:
+                    if (connection.HandleHelloResponse(message))
                         OnClientConnected(connection);
                     break;
                 default:
@@ -565,6 +566,8 @@ namespace Riptide
         protected virtual void OnMessageReceived(Message message, Connection fromConnection)
         {
             ushort messageId = (ushort)message.GetVarULong();
+            message.OrderStamp = message.SendMode == MessageSendMode.Ordered ? (int)message.GetByte() : 0;
+            
             if (RelayFilter != null && RelayFilter.ShouldRelay(messageId))
             {
                 // The message should be automatically relayed to clients instead of being handled on the server

@@ -25,11 +25,14 @@ namespace Riptide.Transports
 
         /// <summary>A notify message.</summary>
         Notify,
+        
+        /// <summary>An ordered user message.</summary>
+        Ordered,
 
         /// <summary>A reliable user message.</summary>
         Reliable,
-        /// <summary>An internal reliable welcome message.</summary>
-        Welcome,
+        /// <summary>An internal reliable hello message.</summary>
+        Hello,
         /// <summary>An internal reliable client connected message.</summary>
         ClientConnected,
         /// <summary>An internal reliable client disconnected message.</summary>
