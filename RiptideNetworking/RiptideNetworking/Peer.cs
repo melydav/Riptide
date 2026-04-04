@@ -181,7 +181,7 @@ namespace Riptide
                     return;
 
                 e.FromConnection.Metrics.ReceivedReliable(e.Amount);
-                if (e.FromConnection.ShouldHandle(Converter.UShortFromBits(e.DataBuffer, Message.HeaderBits)))
+                if (e.FromConnection.ShouldHandle(Converter.UShortFromBits(e.DataBuffer, Message.HeaderBits), true))
                 {
                     Buffer.BlockCopy(e.DataBuffer, 1, message.Data, 1, e.Amount - 1);
                     messagesToHandle.Enqueue(new MessageToHandle(message, header, e.FromConnection));
@@ -195,7 +195,7 @@ namespace Riptide
                     return;
 
                 e.FromConnection.Metrics.ReceivedReliable(e.Amount);
-                if (e.FromConnection.ShouldHandle(Converter.UShortFromBits(e.DataBuffer, Message.HeaderBits)))
+                if (e.FromConnection.ShouldHandle(Converter.UShortFromBits(e.DataBuffer, Message.HeaderBits), false))
                 {
                     Buffer.BlockCopy(e.DataBuffer, 1, message.Data, 1, e.Amount - 1);
                     messagesToHandle.Enqueue(new MessageToHandle(message, header, e.FromConnection));

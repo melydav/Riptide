@@ -180,6 +180,15 @@ namespace Riptide
                 Send(Message.ByteBuffer, byteAmount);
                 Metrics.SentUnreliable(byteAmount);
             }
+            else if (message.SendMode == MessageSendMode.Ordered)
+            {
+                sequenceId = reliable.NextSequenceId;
+                PendingMessage pendingMessage = PendingMessage.Create(sequenceId, message, this);
+                pendingMessages.Add(sequenceId, pendingMessage);
+                pendingMessage.TrySend();
+                Metrics.ReliableUniques++;
+                Message.OnOrderedPending();
+            }
             else
             {
                 sequenceId = reliable.NextSequenceId;
@@ -221,9 +230,9 @@ namespace Riptide
         /// <summary>Determines if the message with the given sequence ID should be handled.</summary>
         /// <param name="sequenceId">The message's sequence ID.</param>
         /// <returns>Whether or not the message should be handled.</returns>
-        internal bool ShouldHandle(ushort sequenceId)
+        internal bool ShouldHandle(ushort sequenceId, bool wasOrdered)
         {
-            return reliable.ShouldHandle(sequenceId);
+            return reliable.ShouldHandle(sequenceId, wasOrdered);
         }
 
         /// <summary>Cleans up the local side of the connection.</summary>
@@ -299,7 +308,7 @@ namespace Riptide
         /// <param name="forSeqId">The sequence ID to acknowledge.</param>
         /// <param name="lastReceivedSeqId">The sequence ID of the latest message we've received.</param>
         /// <param name="receivedSeqIds">Sequence IDs of previous messages that we have (or have not received).</param>
-        private void SendAck(ushort forSeqId, ushort lastReceivedSeqId, Bitfield receivedSeqIds)
+        private void SendAck(ushort forSeqId, ushort lastReceivedSeqId, Bitfield receivedSeqIds, bool wasOrdered = false)
         {
             Message message = Message.Create(MessageHeader.Ack);
             message.AddUShort(lastReceivedSeqId);
@@ -312,6 +321,8 @@ namespace Riptide
                 message.AddBool(true);
                 message.AddUShort(forSeqId);
             }
+            
+            message.AddBool(wasOrdered);
 
             Send(message);
         }
@@ -323,6 +334,9 @@ namespace Riptide
             ushort remoteLastReceivedSeqId = message.GetUShort();
             ushort remoteAcksBitField = message.GetUShort();
             ushort ackedSeqId = message.GetBool() ? message.GetUShort() : remoteLastReceivedSeqId;
+            bool wasOrdered = message.GetBool();
+
+            if (wasOrdered) Message.OnOrderedAck();
 
             ClearMessage(ackedSeqId);
             reliable.UpdateReceivedAcks(remoteLastReceivedSeqId, remoteAcksBitField);
@@ -475,7 +489,7 @@ namespace Riptide
             /// <summary>Determines whether or not to handle a message with the given sequence ID.</summary>
             /// <param name="sequenceId">The sequence ID in question.</param>
             /// <returns>Whether or not to handle the message.</returns>
-            internal abstract bool ShouldHandle(ushort sequenceId);
+            internal abstract bool ShouldHandle(ushort sequenceId, bool wasOrdered);
 
             /// <summary>Updates which messages we've received acks for.</summary>
             /// <param name="remoteLastReceivedSeqId">The latest sequence ID that the other end has received.</param>
@@ -502,7 +516,7 @@ namespace Riptide
 
             /// <inheritdoc/>
             /// <remarks>Duplicate and out of order messages are filtered out and not handled.</remarks>
-            internal override bool ShouldHandle(ushort sequenceId)
+            internal override bool ShouldHandle(ushort sequenceId, bool _ = false)
             {
                 int sequenceGap = Helper.GetSequenceGap(sequenceId, lastReceivedSeqId);
 
@@ -569,7 +583,7 @@ namespace Riptide
 
             /// <inheritdoc/>
             /// <remarks>Duplicate messages are filtered out while out of order messages are handled.</remarks>
-            internal override bool ShouldHandle(ushort sequenceId)
+            internal override bool ShouldHandle(ushort sequenceId, bool wasOrdered)
             {
                 bool doHandle = false;
                 int sequenceGap = Helper.GetSequenceGap(sequenceId, lastReceivedSeqId);
@@ -593,7 +607,7 @@ namespace Riptide
                     receivedSeqIds.Set(sequenceGap);
                 }
 
-                connection.SendAck(sequenceId, lastReceivedSeqId, receivedSeqIds);
+                connection.SendAck(sequenceId, lastReceivedSeqId, receivedSeqIds, wasOrdered);
                 return doHandle;
             }
 

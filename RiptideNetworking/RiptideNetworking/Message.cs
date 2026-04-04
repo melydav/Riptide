@@ -89,8 +89,8 @@ namespace Riptide
         /// <summary>The maximum size of the <see cref="data"/> array.</summary>
         private static int maxArraySize;
 
-        /// <summary>The amount of ordered messages currently queued.</summary>
-        private static byte orderedMessagesQueued;
+        /// <summary>The last value assigned to an ordered message's order stamp.</summary>
+        private static byte latestOrderStamp;
 
         /// <summary>The order stamp of the message.</summary>
         /// <remarks>Converted from a byte to an int. Shows in what order the message should be processed.</remarks>
@@ -166,7 +166,7 @@ namespace Riptide
         public static Message Create(MessageSendMode sendMode, ushort id)
         {
             if (sendMode == MessageSendMode.Ordered)
-                return RetrieveFromPool().Init((MessageHeader)sendMode).AddVarULong(id).AddByte(orderedMessagesQueued);
+                return RetrieveFromPool().Init((MessageHeader)sendMode).AddVarULong(id).AddByte(latestOrderStamp);
             
             return RetrieveFromPool().Init((MessageHeader)sendMode).AddVarULong(id);
         }
@@ -287,6 +287,27 @@ namespace Riptide
                 writeBit = UnreliableHeaderBits;
                 SendMode = MessageSendMode.Unreliable;
             }
+        }
+        
+        /// <summary>Decreases the latest order stamp.</summary>
+        /// <remarks>Called when an ordered message's ack is received.</remarks>
+        public static void OnOrderedAck()
+        {
+            if (latestOrderStamp == byte.MinValue) return; // Ensure the order stamp doesn't wrap
+            latestOrderStamp--;
+        }
+
+        ///<summary>Increases the latest order stamp.</summary>
+        /// <remarks>Called when an ordered message is pending.</remarks>
+        public static void OnOrderedPending()
+        {
+            if (latestOrderStamp == byte.MaxValue) // Same here, hopefully no wrapping
+            {
+                RiptideLogger.Log(LogType.Error, "SERVER", $"OrderStamp is already at maximum capacity ({byte.MaxValue})! Skipping incrementation.");
+                return;
+            }
+            
+            latestOrderStamp++;
         }
         #endregion
 
