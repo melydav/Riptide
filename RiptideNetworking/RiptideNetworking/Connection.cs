@@ -229,6 +229,7 @@ namespace Riptide
 
         /// <summary>Determines if the message with the given sequence ID should be handled.</summary>
         /// <param name="sequenceId">The message's sequence ID.</param>
+        /// <param name="wasOrdered">Shows if the message header was ordered.</param>
         /// <returns>Whether or not the message should be handled.</returns>
         internal bool ShouldHandle(ushort sequenceId, bool wasOrdered)
         {
@@ -308,6 +309,7 @@ namespace Riptide
         /// <param name="forSeqId">The sequence ID to acknowledge.</param>
         /// <param name="lastReceivedSeqId">The sequence ID of the latest message we've received.</param>
         /// <param name="receivedSeqIds">Sequence IDs of previous messages that we have (or have not received).</param>
+        /// /// <param name="wasOrdered">Shows if the message header was ordered.</param>
         private void SendAck(ushort forSeqId, ushort lastReceivedSeqId, Bitfield receivedSeqIds, bool wasOrdered = false)
         {
             Message message = Message.Create(MessageHeader.Ack);
@@ -488,6 +490,7 @@ namespace Riptide
 
             /// <summary>Determines whether or not to handle a message with the given sequence ID.</summary>
             /// <param name="sequenceId">The sequence ID in question.</param>
+            /// /// <param name="wasOrdered">Shows if the message header was ordered.</param>
             /// <returns>Whether or not to handle the message.</returns>
             internal abstract bool ShouldHandle(ushort sequenceId, bool wasOrdered);
 

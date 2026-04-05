@@ -81,6 +81,8 @@ namespace Riptide
         private readonly System.Diagnostics.Stopwatch time = new System.Diagnostics.Stopwatch();
         /// <summary>Received messages which need to be handled.</summary>
         private readonly Queue<MessageToHandle> messagesToHandle = new Queue<MessageToHandle>();
+        /// <summary>Received and sorted messages with the ordered header which need to be handled.</summary>
+        private readonly PriorityQueue<MessageToHandle, byte> orderedMessagesToHandle = new PriorityQueue<MessageToHandle, byte>();
         /// <summary>A queue of events to execute, ordered by how soon they need to be executed.</summary>
         private readonly PriorityQueue<DelayedEvent, long> eventQueue = new PriorityQueue<DelayedEvent, long>();
 
@@ -153,6 +155,12 @@ namespace Riptide
                 MessageToHandle handle = messagesToHandle.Dequeue();
                 Handle(handle.Message, handle.Header, handle.FromConnection);
             }
+
+            while (orderedMessagesToHandle.Count > 0)
+            {
+                MessageToHandle handleO = orderedMessagesToHandle.Dequeue();
+                Handle(handleO.Message, handleO.Header, handleO.FromConnection);
+            }
         }
 
         /// <summary>Handles data received by the transport.</summary>
@@ -184,7 +192,9 @@ namespace Riptide
                 if (e.FromConnection.ShouldHandle(Converter.UShortFromBits(e.DataBuffer, Message.HeaderBits), true))
                 {
                     Buffer.BlockCopy(e.DataBuffer, 1, message.Data, 1, e.Amount - 1);
-                    messagesToHandle.Enqueue(new MessageToHandle(message, header, e.FromConnection));
+                    message.PeekBits(8, (4 + 2 * Converter.BitsPerByte), out byte stamp); // start bit is right after the header (4 bits) + sequence id (2 bytes)
+                    message.OrderStamp = stamp;
+                    orderedMessagesToHandle.Enqueue(new MessageToHandle(message, header, e.FromConnection), (byte)message.OrderStamp);
                 }
                 else
                     e.FromConnection.Metrics.ReliableDiscarded++;
