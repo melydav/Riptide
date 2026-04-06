@@ -294,6 +294,11 @@ namespace Riptide
                 case MessageHeader.ClientDisconnected:
                     OnClientDisconnected(message.GetUShort());
                     break;
+                
+                // RPC Calls
+                case MessageHeader.Rpc:
+                    // TODO: Implement RPC handling
+                    break;
                 default:
                     RiptideLogger.Log(LogType.Warning, LogName, $"Unexpected message header '{header}'! Discarding {message.BytesInUse} bytes.");
                     break;

@@ -337,6 +337,11 @@ namespace Riptide
                     if (connection.HandleHelloResponse(message))
                         OnClientConnected(connection);
                     break;
+                
+                // RPC calls
+                case MessageHeader.Rpc:
+                    // TODO: Implement RPC relaying
+                    break;
                 default:
                     RiptideLogger.Log(LogType.Warning, LogName, $"Unexpected message header '{header}'! Discarding {message.BytesInUse} bytes received from {connection}.");
                     break;
