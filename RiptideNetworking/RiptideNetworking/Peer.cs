@@ -108,6 +108,21 @@ namespace Riptide
                 .ToArray();
         }
 
+        /// <summary>Retrieves methods marked with <see cref="RpcAttribute"/>.</summary>
+        /// <returns>An array of rpc methods.</returns>
+        protected MethodInfo[] FindRpcs()
+        {
+            string thisAssemblyName = Assembly.GetExecutingAssembly().GetName().FullName;
+            return AppDomain.CurrentDomain.GetAssemblies()
+                .Where(a => a
+                    .GetReferencedAssemblies()
+                    .Any(n => n.FullName == thisAssemblyName))
+                .SelectMany(a => a.GetTypes())
+                .SelectMany(t => t.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static))
+                .Where(m => m.GetCustomAttributes(typeof(RpcAttribute), false).Length > 0)
+                .ToArray();
+        }
+
         /// <summary>Builds a dictionary of message IDs and their corresponding message handler methods.</summary>
         /// <param name="messageHandlerGroupId">The ID of the group of message handler methods to include in the dictionary.</param>
         protected abstract void CreateMessageHandlersDictionary(byte messageHandlerGroupId);

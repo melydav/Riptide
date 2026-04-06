@@ -62,7 +62,8 @@ namespace Riptide
         /// <summary>Encapsulates a method that handles a message from a server.</summary>
         /// <param name="message">The message that was received.</param>
         public delegate void MessageHandler(Message message);
-
+        /// <summary>Encapsulates a method that can be called over the network.</summary>
+        public delegate void Rpc(object[] param);
         /// <inheritdoc cref="Connection"/>
         private Connection connection;
         /// <summary>How many connection attempts have been made so far.</summary>
@@ -71,6 +72,9 @@ namespace Riptide
         private int maxConnectionAttempts;
         /// <inheritdoc cref="Server.messageHandlers"/>
         private Dictionary<ushort, MessageHandler> messageHandlers;
+        /// <summary>A dictionary of rpc methods that can be called over the network.</summary>
+        /// <remarks>An RPC (Remote procedure call) is a method call that goes through the server, and is fired on all connected clients. An RPC may have a client as a sender or the server itself.</remarks>
+        private Dictionary<string, Rpc> rpcs;
         /// <summary>The underlying transport's client that is used for sending and receiving data.</summary>
         private IClient transport;
         /// <summary>The message sent when connecting. May include custom data.</summary>
@@ -102,12 +106,13 @@ namespace Riptide
         /// <param name="messageHandlerGroupId">The ID of the group of message handler methods to use when building <see cref="messageHandlers"/>.</param>
         /// <param name="message">Data that should be sent to the server with the connection attempt. Use <see cref="Message.Create()"/> to get an empty message instance.</param>
         /// <param name="useMessageHandlers">Whether or not the client should use the built-in message handler system.</param>
+        /// <param name="useRpcs">Whether or not the client should be able to use rpcs.</param>
         /// <remarks>
         ///   <para>Riptide's default transport expects the host address to consist of an IP and port, separated by a colon. For example: <c>127.0.0.1:7777</c>. If you are using a different transport, check the relevant documentation for what information it requires in the host address.</para>
         ///   <para>Setting <paramref name="useMessageHandlers"/> to <see langword="false"/> will disable the automatic detection and execution of methods with the <see cref="MessageHandlerAttribute"/>, which is beneficial if you prefer to handle messages via the <see cref="MessageReceived"/> event.</para>
         /// </remarks>
         /// <returns><see langword="true"/> if a connection attempt will be made. <see langword="false"/> if an issue occurred (such as <paramref name="hostAddress"/> being in an invalid format) and a connection attempt will <i>not</i> be made.</returns>
-        public bool Connect(string hostAddress, int maxConnectionAttempts = 5, byte messageHandlerGroupId = 0, Message message = null, bool useMessageHandlers = true)
+        public bool Connect(string hostAddress, int maxConnectionAttempts = 5, byte messageHandlerGroupId = 0, Message message = null, bool useMessageHandlers = true, bool useRpcs = false)
         {
             Disconnect();
 
@@ -127,6 +132,9 @@ namespace Riptide
             this.useMessageHandlers = useMessageHandlers;
             if (useMessageHandlers)
                 CreateMessageHandlersDictionary(messageHandlerGroupId);
+            
+            if(useRpcs)
+                CreateRpcDictionary();
 
             connectMessage = Message.Create(MessageHeader.Connect);
             if (message != null)
@@ -418,6 +426,26 @@ namespace Riptide
         {
             RiptideLogger.Log(LogType.Info, LogName, $"Client {clientId} disconnected.");
             ClientDisconnected?.Invoke(this, new ClientDisconnectedEventArgs(clientId));
+        }
+        #endregion
+        
+        #region Rpcs
+        /// <summary>Builds a list of Rpcs that can be called over the network.</summary>
+        protected void CreateRpcDictionary()
+        {
+            MethodInfo[] rpcMethods = FindRpcs();
+            
+            rpcs = new Dictionary<string, Rpc>(rpcMethods.Length);
+            foreach (MethodInfo method in rpcMethods)
+            {
+                if (!method.IsStatic) 
+                    throw new Exception($"Rpc method {method.Name} isn't static!");
+
+                Delegate rpc = Delegate.CreateDelegate(typeof(Rpc), method, false);
+                rpcs.Add(method.Name, (Rpc)rpc);
+            }
+            
+            RiptideLogger.Log(LogType.Info, LogName, $"Registered {rpcs.Count} {(rpcs.Count == 1 ? "RPC" : "RPCs")}.");
         }
         #endregion
     }

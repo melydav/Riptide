@@ -8,10 +8,10 @@ using System;
 namespace Riptide
 {
     /// <summary>Specifies a method as an Rpc method that can be called over the network.</summary>
-    [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
-    public class Rpc : Attribute
+    [AttributeUsage(AttributeTargets.Method, Inherited = false, AllowMultiple = false)]
+    public class RpcAttribute : Attribute
     {
         /// <summary>Initializes an Rpc.</summary>
-        public Rpc() { }
+        public RpcAttribute() { }
     }
 }
