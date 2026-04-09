@@ -1897,6 +1897,70 @@ namespace Riptide
         }
         #endregion
 
+        #region Objects
+        /// <summary>Adds an object to the message.</summary>
+        /// <param name="value">The object to add.</param>
+        /// <typeparam name="T">The original type of the object.</typeparam>
+        /// <returns>The message the object was added to.</returns>
+        public Message AddObject<T>(object value)
+        {
+            if (ObjectAddDictionary.TryGetValue(typeof(T), out var write))
+            {
+                write(this, value);
+                return this;
+            }
+            else
+            {
+                throw new Exception($"Error while adding object of type {typeof(T)}, as it's not implemented!");
+            }
+        }
+
+        /// <summary>Retrieves an object from the message.</summary>
+        /// <typeparam name="T">The original type of the desired object.</typeparam>
+        /// <returns>The desired object.</returns>
+        public object GetObject<T>()
+        {
+            if (ObjectGetDictionary.TryGetValue(typeof(T), out var read))
+            {
+                return read(this);
+            }
+            else
+            {
+                throw new Exception($"Error while getting object of type {typeof(T)}, as it's not implemented!");
+            }
+        }
+        
+        private Dictionary<Type, Action<Message, object>> ObjectAddDictionary = new Dictionary<Type, Action<Message, object>>
+        {
+            {typeof(byte), (Message obj, object value) => { obj.AddByte((byte)value); }},
+            {typeof(short), (Message obj, object value) => { obj.AddShort((short)value); } },
+            {typeof(ushort), (Message obj, object value) => { obj.AddUShort((ushort)value); } },
+            {typeof(int), (Message obj, object value) => { obj.AddInt((int)value);} },
+            {typeof(uint), (Message obj, object value) => { obj.AddUInt((uint)value); } },
+            {typeof(long), (Message obj, object value) => { obj.AddLong((long)value); } },
+            {typeof(ulong), (Message obj, object value) => { obj.AddULong((ulong)value); } },
+            {typeof(float), (Message obj, object value) => { obj.AddFloat((float)value); } },
+            {typeof(double), (Message obj, object value) => { obj.AddDouble((double)value); } },
+            {typeof(string), (Message obj, object value) => { obj.AddString((string)value); } },
+            // TODO: Implement writing arrays
+        };
+
+        private Dictionary<Type, Func<Message, object>> ObjectGetDictionary = new Dictionary<Type, Func<Message, object>>
+        {
+            {typeof(byte), (Message obj) => { return obj.GetByte(); }},
+            {typeof(short), (Message obj) => { return obj.GetShort(); } },
+            {typeof(ushort), (Message obj) => { return obj.GetUShort(); } },
+            {typeof(int), (Message obj) => { return obj.GetInt(); } },
+            {typeof(uint), (Message obj) => { return obj.GetUInt(); } },
+            {typeof(long), (Message obj) => { return obj.GetLong(); } },
+            {typeof(ulong), (Message obj) => { return obj.GetULong(); } },
+            {typeof(float), (Message obj) => { return obj.GetFloat(); } },
+            {typeof(double), (Message obj) => { return obj.GetDouble(); } },
+            {typeof(string), (Message obj) => { return obj.GetString(); } },
+            // TODO: Implement reading arrays
+        };
+        #endregion
+
         #region Overload Versions
         /// <inheritdoc cref="AddByte(byte)"/>
         /// <remarks>This method is simply an alternative way of calling <see cref="AddByte(byte)"/>.</remarks>
