@@ -74,7 +74,7 @@ namespace Riptide
         private Dictionary<ushort, MessageHandler> messageHandlers;
         /// <summary>A dictionary of rpc methods that can be called over the network.</summary>
         /// <remarks>An RPC (Remote procedure call) is a method call that goes through the server, and is fired on all connected clients. An RPC may have a client as a sender or the server itself.</remarks>
-        private Dictionary<string, Rpc> rpcs;
+        private Dictionary<short, Rpc> rpcs;
         /// <summary>The underlying transport's client that is used for sending and receiving data.</summary>
         private IClient transport;
         /// <summary>The message sent when connecting. May include custom data.</summary>
@@ -440,14 +440,20 @@ namespace Riptide
         {
             MethodInfo[] rpcMethods = FindRpcs();
             
-            rpcs = new Dictionary<string, Rpc>(rpcMethods.Length);
+            rpcIds = new Dictionary<string, short>(rpcMethods.Length);
+            rpcs = new Dictionary<short, Rpc>(rpcMethods.Length);
+
+            short currentId = 0;
+            
             foreach (MethodInfo method in rpcMethods)
             {
                 if (!method.IsStatic) 
                     throw new Exception($"Rpc method {method.Name} isn't static!");
 
                 Delegate rpc = Delegate.CreateDelegate(typeof(Rpc), method, false);
-                rpcs.Add(method.Name, (Rpc)rpc);
+                rpcs.Add(currentId, (Rpc)rpc);
+                rpcIds.Add(rpc.Method.Name, currentId);
+                currentId++;
             }
             
             RiptideLogger.Log(LogType.Info, LogName, $"Registered {rpcs.Count} {(rpcs.Count == 1 ? "RPC" : "RPCs")}.");

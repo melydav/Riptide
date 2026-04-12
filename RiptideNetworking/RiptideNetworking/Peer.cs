@@ -76,6 +76,9 @@ namespace Riptide
         protected bool useMessageHandlers;
         /// <summary>The default time (in milliseconds) after which to disconnect if no heartbeats are received.</summary>
         protected int defaultTimeout = 12500;
+        
+        /// <summary>A helper dictionary that contains the RPC's Id as a value, with it's key being the RPC method's name.</summary>
+        internal Dictionary<string, short> rpcIds;
 
         /// <summary>A stopwatch used to track how much time has passed.</summary>
         private readonly System.Diagnostics.Stopwatch time = new System.Diagnostics.Stopwatch();

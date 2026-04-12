@@ -109,6 +109,8 @@ namespace Riptide
             this.useMessageHandlers = useMessageHandlers;
             if (useMessageHandlers)
                 CreateMessageHandlersDictionary(messageHandlerGroupId);
+            
+            rpcIds = new Dictionary<string, short>();
 
             MaxClientCount = maxClientCount;
             clients = new Dictionary<ushort, Connection>(maxClientCount);
