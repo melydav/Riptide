@@ -111,21 +111,6 @@ namespace Riptide
                 .ToArray();
         }
 
-        /// <summary>Retrieves methods marked with <see cref="RpcAttribute"/>.</summary>
-        /// <returns>An array of rpc methods.</returns>
-        protected MethodInfo[] FindRpcs()
-        {
-            string thisAssemblyName = Assembly.GetExecutingAssembly().GetName().FullName;
-            return AppDomain.CurrentDomain.GetAssemblies()
-                .Where(a => a
-                    .GetReferencedAssemblies()
-                    .Any(n => n.FullName == thisAssemblyName))
-                .SelectMany(a => a.GetTypes())
-                .SelectMany(t => t.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static))
-                .Where(m => m.GetCustomAttributes(typeof(RpcAttribute), false).Length > 0)
-                .ToArray();
-        }
-
         /// <summary>Builds a dictionary of message IDs and their corresponding message handler methods.</summary>
         /// <param name="messageHandlerGroupId">The ID of the group of message handler methods to include in the dictionary.</param>
         protected abstract void CreateMessageHandlersDictionary(byte messageHandlerGroupId);
@@ -257,6 +242,44 @@ namespace Riptide
             if (ActiveCount < 0)
                 ActiveCount = 0;
         }
+
+        #region RPCs
+        /// <summary>Retrieves methods marked with <see cref="RpcAttribute"/>.</summary>
+        /// <returns>An array of rpc methods.</returns>
+        protected MethodInfo[] FindRpcs()
+        {
+            string thisAssemblyName = Assembly.GetExecutingAssembly().GetName().FullName;
+            return AppDomain.CurrentDomain.GetAssemblies()
+                .Where(a => a
+                    .GetReferencedAssemblies()
+                    .Any(n => n.FullName == thisAssemblyName))
+                .SelectMany(a => a.GetTypes())
+                .SelectMany(t => t.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static))
+                .Where(m => m.GetCustomAttributes(typeof(RpcAttribute), false).Length > 0)
+                .ToArray();
+        }
+
+        /// <summary>Calls an RPC method by its id.</summary>
+        /// <param name="id">The id of the RPC method.</param>
+        /// <param name="paramTypes">The original types of the given parameters.</param>
+        /// <param name="param">The parameters of the RPC method.</param>
+        public abstract void CallRpc(ushort id, Type[] paramTypes, object[] param);
+        
+        /// <summary></summary>
+        /// <param name="id">The id of the RPC method.</param>
+        /// <param name="executor">The id of the client that should execute the called RPC method.</param>
+        /// <param name="paramTypes">The original types of the given parameters.</param>
+        /// <param name="param">The parameters of the RPC method.</param>
+        public abstract void CallTargetedRpc(ushort id, ushort executor, Type[] paramTypes, object[] param);
+        
+        /// <summary></summary>
+        /// <param name="id"></param>
+        /// <param name="executor">The id of the client that should execute the called RPC method.</param>
+        /// <param name="mask">The mask of the clients this RPC call should affect.</param>
+        /// <param name="paramTypes">The original types of the given parameters.</param>
+        /// <param name="param">The parameters of the RPC method.</param>
+        public abstract void CallMaskedRpc(ushort id, ushort executor, ushort mask, Type[] paramTypes, object[] param);
+        #endregion
     }
 
     /// <summary>Stores information about a message that needs to be handled.</summary>

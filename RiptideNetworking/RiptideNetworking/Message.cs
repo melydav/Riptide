@@ -1900,33 +1900,33 @@ namespace Riptide
         #region Objects
         /// <summary>Adds an object to the message.</summary>
         /// <param name="value">The object to add.</param>
-        /// <typeparam name="T">The original type of the object.</typeparam>
+        /// <param name="T">The original type of the object.</param>
         /// <returns>The message the object was added to.</returns>
-        public Message AddObject<T>(object value)
+        public Message AddObject(Type T, object value)
         {
-            if (ObjectAddDictionary.TryGetValue(typeof(T), out var write))
+            if (ObjectAddDictionary.TryGetValue(T, out var write))
             {
                 write(this, value);
                 return this;
             }
             else
             {
-                throw new Exception($"Error while adding object of type {typeof(T)}, as it's not implemented!");
+                throw new Exception($"Error while adding object of type {T}, as it's not implemented!");
             }
         }
 
         /// <summary>Retrieves an object from the message.</summary>
-        /// <typeparam name="T">The original type of the desired object.</typeparam>
+        /// <param name="T">The original type of the desired object.</param>
         /// <returns>The desired object.</returns>
-        public object GetObject<T>()
+        public object GetObject(Type T)
         {
-            if (ObjectGetDictionary.TryGetValue(typeof(T), out var read))
+            if (ObjectGetDictionary.TryGetValue(T, out var read))
             {
                 return read(this);
             }
             else
             {
-                throw new Exception($"Error while getting object of type {typeof(T)}, as it's not implemented!");
+                throw new Exception($"Error while getting object of type {T}, as it's not implemented!");
             }
         }
         

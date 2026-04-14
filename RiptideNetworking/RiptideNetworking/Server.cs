@@ -603,5 +603,41 @@ namespace Riptide
             ClientDisconnected?.Invoke(this, new ServerDisconnectedEventArgs(connection, reason));
         }
         #endregion
+        
+        #region RPCs
+        /// <inheritdoc/>
+        public override void CallRpc(ushort id, Type[] paramTypes, object[] param)
+        {
+            CallMaskedRpc(id, 0, 0,  paramTypes, param);
+        }
+
+        /// <inheritdoc/>
+        public override void CallTargetedRpc(ushort id, ushort executor, Type[] paramTypes, object[] param)
+        {
+            CallMaskedRpc(id, executor, 0, paramTypes, param);
+        }
+
+        /// <inheritdoc/>
+        public override void CallMaskedRpc(ushort id, ushort executor, ushort mask, Type[] paramTypes, object[] param)
+        {
+            Message message = Message.Create(MessageHeader.Rpc);
+            message.AddUShort(id)
+                .AddUShort(executor)
+                .AddUShort(mask);
+            
+            for (int i = 0; i < param.Length; i++)
+            {
+                message.AddObject(paramTypes[i], param[i]);
+            }
+
+            if (executor != 0)
+            {
+                Send(message, executor);
+                return;
+            }
+            
+            SendToAll(message);
+        }
+        #endregion
     }
 }

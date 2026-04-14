@@ -458,6 +458,34 @@ namespace Riptide
             
             RiptideLogger.Log(LogType.Info, LogName, $"Registered {rpcs.Count} {(rpcs.Count == 1 ? "RPC" : "RPCs")}.");
         }
+
+        /// <inheritdoc/>
+        public override void CallRpc(ushort id, Type[] paramTypes, object[] param)
+        {
+            CallMaskedRpc(id, 0, 0,  paramTypes, param);
+        }
+        
+        /// <inheritdoc/>
+        public override void CallTargetedRpc(ushort id, ushort executor, Type[] paramTypes, object[] param)
+        {
+            CallMaskedRpc(id, executor, 0, paramTypes, param);
+        }
+        
+        /// <inheritdoc/>
+        public override void CallMaskedRpc(ushort id, ushort executor, ushort mask, Type[] paramTypes, object[] param)
+        {
+            Message message = Message.Create(MessageHeader.Rpc);
+            message.AddUShort(id)
+                   .AddUShort(executor)
+                   .AddUShort(mask);
+            
+            for (int i = 0; i < param.Length; i++)
+            {
+                message.AddObject(paramTypes[i], param[i]);
+            }
+
+            Send(message);
+        }
         #endregion
     }
 }
