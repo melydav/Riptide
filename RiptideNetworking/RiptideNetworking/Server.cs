@@ -72,6 +72,9 @@ namespace Riptide
         /// <summary>All currently unused client IDs.</summary>
         private Queue<ushort> availableClientIds;
 
+        /// <summary>Whether or not the server should log broadcasted RPC calls.</summary>
+        protected internal bool debugRpcCalls;
+
         /// <summary>Handles initial setup.</summary>
         /// <param name="transport">The transport to use for sending and receiving data.</param>
         /// <param name="logName">The name to use when logging messages via <see cref="RiptideLogger"/>.</param>
@@ -101,7 +104,7 @@ namespace Riptide
         /// <param name="messageHandlerGroupId">The ID of the group of message handler methods to use when building <see cref="messageHandlers"/>.</param>
         /// <param name="useMessageHandlers">Whether or not the server should use the built-in message handler system.</param>
         /// <remarks>Setting <paramref name="useMessageHandlers"/> to <see langword="false"/> will disable the automatic detection and execution of methods with the <see cref="MessageHandlerAttribute"/>, which is beneficial if you prefer to handle messages via the <see cref="MessageReceived"/> event.</remarks>
-        public void Start(ushort port, ushort maxClientCount, byte messageHandlerGroupId = 0, bool useMessageHandlers = true)
+        public void Start(ushort port, ushort maxClientCount, byte messageHandlerGroupId = 0, bool useMessageHandlers = true, bool debugRpcCalls = false)
         {
             Stop();
 
@@ -111,7 +114,8 @@ namespace Riptide
                 CreateMessageHandlersDictionary(messageHandlerGroupId);
             
             rpcIds = new Dictionary<string, short>();
-
+            this.debugRpcCalls = debugRpcCalls;
+            
             MaxClientCount = maxClientCount;
             clients = new Dictionary<ushort, Connection>(maxClientCount);
             InitializeClientIds();
@@ -342,7 +346,7 @@ namespace Riptide
                 
                 // RPC calls
                 case MessageHeader.Rpc:
-                    // TODO: Implement RPC relaying
+                    HandleRpc(message, connection);
                     break;
                 default:
                     RiptideLogger.Log(LogType.Warning, LogName, $"Unexpected message header '{header}'! Discarding {message.BytesInUse} bytes received from {connection}.");
@@ -605,6 +609,24 @@ namespace Riptide
         #endregion
         
         #region RPCs
+        /// <summary>Broadcasts an RPC call.</summary>
+        protected internal void HandleRpc(Message message, Connection connection)
+        {
+            message.PeekBits(16, 4, out ushort id);
+            message.PeekBits(16, 20, out ushort executor);
+            message.PeekBits(16, 36, out ushort mask);
+            
+            if (executor != 0)
+            {
+                if(debugRpcCalls) RiptideLogger.Log(LogType.Info, LogName, $"Broadcasting RPC of Id {id} to client {executor} on mask {mask}.");
+                Send(message, executor);
+                return;
+            }
+            
+            if(debugRpcCalls) RiptideLogger.Log(LogType.Info, LogName, $"Broadcasting RPC of Id {id} to all clients on mask {mask}.");
+            SendToAll(message);
+        }
+        
         /// <inheritdoc/>
         public override void CallRpc(ushort id, Type[] paramTypes, object[] param)
         {
@@ -623,7 +645,8 @@ namespace Riptide
             Message message = Message.Create(MessageHeader.Rpc);
             message.AddUShort(id)
                 .AddUShort(executor)
-                .AddUShort(mask);
+                .AddUShort(mask)
+                .AddByte((byte)param.Length);
             
             for (int i = 0; i < param.Length; i++)
             {

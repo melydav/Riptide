@@ -63,7 +63,7 @@ namespace Riptide
         /// <param name="message">The message that was received.</param>
         public delegate void MessageHandler(Message message);
         /// <summary>Encapsulates a method that can be called over the network.</summary>
-        public delegate void Rpc(object[] param);
+        public delegate void Rpc(Message param);
         /// <inheritdoc cref="Connection"/>
         private Connection connection;
         /// <summary>How many connection attempts have been made so far.</summary>
@@ -297,7 +297,7 @@ namespace Riptide
                 
                 // RPC Calls
                 case MessageHeader.Rpc:
-                    // TODO: Implement RPC handling
+                    HandleRpc(message);
                     break;
                 default:
                     RiptideLogger.Log(LogType.Warning, LogName, $"Unexpected message header '{header}'! Discarding {message.BytesInUse} bytes.");
@@ -435,7 +435,18 @@ namespace Riptide
         #endregion
         
         #region Rpcs
-        /// <summary>Builds a list of Rpcs that can be called over the network.</summary>
+        /// <summary>Handles an incoming broadcasted RPC call.</summary>
+        protected internal void HandleRpc(Message message)
+        {
+            ushort id = message.GetUShort();
+            ushort executor = message.GetUShort();
+            ushort mask = message.GetUShort();
+
+            rpcs.TryGetValue((short)id, out var rpc);
+            rpc?.Invoke(message);
+        }
+        
+        /// <summary>Builds a list of RPCs that can be called over the network.</summary>
         protected void CreateRpcDictionary()
         {
             MethodInfo[] rpcMethods = FindRpcs();
@@ -477,7 +488,8 @@ namespace Riptide
             Message message = Message.Create(MessageHeader.Rpc);
             message.AddUShort(id)
                    .AddUShort(executor)
-                   .AddUShort(mask);
+                   .AddUShort(mask)
+                   .AddByte((byte)param.Length);
             
             for (int i = 0; i < param.Length; i++)
             {
