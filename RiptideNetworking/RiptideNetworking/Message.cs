@@ -1930,6 +1930,24 @@ namespace Riptide
             }
         }
         
+        /// <returns>An array of RPC parameters from a given RPC message and an array of expected param types.</returns>
+        /// <remarks>Before your objects, there should be a byte in your message that shows how many objects should be retrieved.</remarks>
+        public object[] GetObjects(Type[] types)
+        {
+            short objectCount = GetByte();
+
+            if (types.Length != objectCount) throw new Exception($"Object count and type array length mismatch! Expected {objectCount} objects, but only {types.Length} types are specified!");
+            
+            List<object> objects = new List<object>(objectCount);
+
+            for (int i = 0; i < types.Length; i++)
+            {
+                objects.Add(GetObject(types[i]));
+            }
+            
+            return objects.ToArray();
+        }
+        
         private Dictionary<Type, Action<Message, object>> ObjectAddDictionary = new Dictionary<Type, Action<Message, object>>
         {
             {typeof(byte), (Message obj, object value) => { obj.AddByte((byte)value); }},
