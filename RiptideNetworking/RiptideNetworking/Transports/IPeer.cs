@@ -38,7 +38,10 @@ namespace Riptide.Transports
         /// <summary>An internal reliable client disconnected message.</summary>
         ClientDisconnected,
         /// <summary>A reliable RPC call.</summary>
-        Rpc
+        Rpc,
+        /// <summary>A reliable synced <see cref="Client.mask"/> override.</summary>
+        Mask
+        // NOTE TO SELF: message headers are four bits, so I only have room for at max 2 more headers.
     }
 
     /// <summary>Defines methods, properties, and events which every transport's server <i>and</i> client must implement.</summary>

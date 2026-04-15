@@ -64,6 +64,13 @@ namespace Riptide
         public delegate void MessageHandler(Message message);
         /// <summary>Encapsulates a method that can be called over the network.</summary>
         public delegate void Rpc(Message param);
+        ///<summary>Public getter of <see cref="mask"/>.</summary>
+        public ushort Mask
+        {
+            get => mask;
+        }
+        /// <summary>The internal numeric mask the client should execute RPCs on.</summary>
+        internal ushort mask;
         /// <inheritdoc cref="Connection"/>
         private Connection connection;
         /// <summary>How many connection attempts have been made so far.</summary>
@@ -112,7 +119,7 @@ namespace Riptide
         ///   <para>Setting <paramref name="useMessageHandlers"/> to <see langword="false"/> will disable the automatic detection and execution of methods with the <see cref="MessageHandlerAttribute"/>, which is beneficial if you prefer to handle messages via the <see cref="MessageReceived"/> event.</para>
         /// </remarks>
         /// <returns><see langword="true"/> if a connection attempt will be made. <see langword="false"/> if an issue occurred (such as <paramref name="hostAddress"/> being in an invalid format) and a connection attempt will <i>not</i> be made.</returns>
-        public bool Connect(string hostAddress, int maxConnectionAttempts = 5, byte messageHandlerGroupId = 0, Message message = null, bool useMessageHandlers = true, bool useRpcs = false)
+        public bool Connect(string hostAddress, int maxConnectionAttempts = 5, byte messageHandlerGroupId = 0, Message message = null, bool useMessageHandlers = true, bool useRpcs = false, ushort rpcMask = 0)
         {
             Disconnect();
 
@@ -132,9 +139,12 @@ namespace Riptide
             this.useMessageHandlers = useMessageHandlers;
             if (useMessageHandlers)
                 CreateMessageHandlersDictionary(messageHandlerGroupId);
-            
-            if(useRpcs)
+
+            if (useRpcs)
+            {
                 CreateRpcDictionary();
+                mask = (rpcMask != 0 ? rpcMask : Id);
+            }
 
             connectMessage = Message.Create(MessageHeader.Connect);
             if (message != null)
@@ -295,9 +305,12 @@ namespace Riptide
                     OnClientDisconnected(message.GetUShort());
                     break;
                 
-                // RPC Calls
+                // RPC related messages
                 case MessageHeader.Rpc:
                     HandleRpc(message);
+                    break;
+                case MessageHeader.Mask:
+                    OverrideMask(message);
                     break;
                 default:
                     RiptideLogger.Log(LogType.Warning, LogName, $"Unexpected message header '{header}'! Discarding {message.BytesInUse} bytes.");
@@ -442,8 +455,31 @@ namespace Riptide
             ushort executor = message.GetUShort();
             ushort mask = message.GetUShort();
 
+            if (this.mask != mask) return; // we ignore RPC calls that weren't called on our mask
+
             rpcs.TryGetValue((short)id, out var rpc);
             rpc?.Invoke(message);
+        }
+
+        /// <summary>Sends a mask change request to the server.</summary>
+        public void RequestMaskOverride(ushort rpcMask = 0)
+        {
+            Message message = Message.Create(MessageHeader.Mask);
+            message.AddUShort(Id);
+            message.AddUShort(rpcMask);
+            Send(message);
+        }
+
+        /// <summary>Internal method, that overrides a <see cref="Client"/>'s <see cref="mask"/>.</summary>
+        internal void OverrideMask(Message message)
+        {
+            ushort id = message.GetUShort();
+            ushort rpcMask = message.GetUShort();
+
+            if (Id != id) return;
+            
+            mask = (rpcMask != 0 ? rpcMask : Id);
+            RiptideLogger.Log(LogType.Debug, LogName, $"Overwrote client {Id}'s mask to {mask}.");
         }
         
         /// <summary>Builds a list of RPCs that can be called over the network.</summary>
