@@ -632,22 +632,25 @@ namespace Riptide
         }
         
         /// <inheritdoc/>
-        public override void CallRpc(ushort id, Type[] paramTypes, object[] param)
+        public override void CallRpc(string methodName, Type[] paramTypes, object[] param)
         {
-            CallMaskedRpc(id, 0, 0,  paramTypes, param);
+            CallMaskedRpc(methodName, 0, 0,  paramTypes, param);
         }
 
         /// <inheritdoc/>
-        public override void CallTargetedRpc(ushort id, ushort executor, Type[] paramTypes, object[] param)
+        public override void CallTargetedRpc(string methodName, ushort executor, Type[] paramTypes, object[] param)
         {
-            CallMaskedRpc(id, executor, 0, paramTypes, param);
+            CallMaskedRpc(methodName, executor, 0, paramTypes, param);
         }
 
         /// <inheritdoc/>
-        public override void CallMaskedRpc(ushort id, ushort executor, ushort mask, Type[] paramTypes, object[] param)
+        public override void CallMaskedRpc(string methodName, ushort executor, ushort mask, Type[] paramTypes, object[] param)
         {
+            short id;
+            if (!rpcIds.TryGetValue(methodName, out id)) throw new Exception($"RPC method with name {methodName} doesn't exist in the RPC id dictionary!");
+            
             Message message = Message.Create(MessageHeader.Rpc);
-            message.AddUShort(id)
+            message.AddUShort((ushort)id)
                 .AddUShort(executor)
                 .AddUShort(mask)
                 .AddByte((byte)param.Length);

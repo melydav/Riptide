@@ -260,25 +260,25 @@ namespace Riptide
         }
 
         /// <summary>Calls an RPC method by its id.</summary>
-        /// <param name="id">The id of the RPC method.</param>
+        /// <param name="methodName">The name of the RPC method.</param>
         /// <param name="paramTypes">The original types of the given parameters.</param>
         /// <param name="param">The parameters of the RPC method.</param>
-        public abstract void CallRpc(ushort id, Type[] paramTypes, object[] param);
+        public abstract void CallRpc(string methodName, Type[] paramTypes, object[] param);
         
         /// <summary></summary>
-        /// <param name="id">The id of the RPC method.</param>
+        /// <param name="methodName">The name of the RPC method.</param>
         /// <param name="executor">The id of the client that should execute the called RPC method.</param>
         /// <param name="paramTypes">The original types of the given parameters.</param>
         /// <param name="param">The parameters of the RPC method.</param>
-        public abstract void CallTargetedRpc(ushort id, ushort executor, Type[] paramTypes, object[] param);
+        public abstract void CallTargetedRpc(string methodName, ushort executor, Type[] paramTypes, object[] param);
         
         /// <summary></summary>
-        /// <param name="id"></param>
+        /// <param name="methodName">The name of the RPC method.</param>
         /// <param name="executor">The id of the client that should execute the called RPC method.</param>
         /// <param name="mask">The mask of the clients this RPC call should affect.</param>
         /// <param name="paramTypes">The original types of the given parameters.</param>
         /// <param name="param">The parameters of the RPC method.</param>
-        public abstract void CallMaskedRpc(ushort id, ushort executor, ushort mask, Type[] paramTypes, object[] param);
+        public abstract void CallMaskedRpc(string methodName, ushort executor, ushort mask, Type[] paramTypes, object[] param);
         #endregion
     }
 
