@@ -1948,7 +1948,8 @@ namespace Riptide
             return objects.ToArray();
         }
         
-        private Dictionary<Type, Action<Message, object>> ObjectAddDictionary = new Dictionary<Type, Action<Message, object>>
+        /// <summary>A dictionary of writable types for the <see cref="Message.AddObject"/> method.</summary>
+        public Dictionary<Type, Action<Message, object>> ObjectAddDictionary = new Dictionary<Type, Action<Message, object>>
         {
             {typeof(byte), (Message obj, object value) => { obj.AddByte((byte)value); }},
             {typeof(short), (Message obj, object value) => { obj.AddShort((short)value); } },
@@ -1963,7 +1964,8 @@ namespace Riptide
             // TODO: Implement writing arrays
         };
 
-        private Dictionary<Type, Func<Message, object>> ObjectGetDictionary = new Dictionary<Type, Func<Message, object>>
+        /// <summary>A dictionary of returnable types for the <see cref="Message.GetObject"/> and <see cref="Message.GetObjects"/> methods.</summary>
+        public Dictionary<Type, Func<Message, object>> ObjectGetDictionary = new Dictionary<Type, Func<Message, object>>
         {
             {typeof(byte), (Message obj) => { return obj.GetByte(); }},
             {typeof(short), (Message obj) => { return obj.GetShort(); } },
