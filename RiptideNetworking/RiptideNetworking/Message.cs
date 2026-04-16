@@ -1949,7 +1949,7 @@ namespace Riptide
         }
         
         /// <summary>A dictionary of writable types for the <see cref="Message.AddObject"/> method.</summary>
-        public Dictionary<Type, Action<Message, object>> ObjectAddDictionary = new Dictionary<Type, Action<Message, object>>
+        public static Dictionary<Type, Action<Message, object>> ObjectAddDictionary = new Dictionary<Type, Action<Message, object>>
         {
             {typeof(byte), (Message obj, object value) => { obj.AddByte((byte)value); }},
             {typeof(short), (Message obj, object value) => { obj.AddShort((short)value); } },
@@ -1965,7 +1965,7 @@ namespace Riptide
         };
 
         /// <summary>A dictionary of returnable types for the <see cref="Message.GetObject"/> and <see cref="Message.GetObjects"/> methods.</summary>
-        public Dictionary<Type, Func<Message, object>> ObjectGetDictionary = new Dictionary<Type, Func<Message, object>>
+        public static Dictionary<Type, Func<Message, object>> ObjectGetDictionary = new Dictionary<Type, Func<Message, object>>
         {
             {typeof(byte), (Message obj) => { return obj.GetByte(); }},
             {typeof(short), (Message obj) => { return obj.GetShort(); } },
