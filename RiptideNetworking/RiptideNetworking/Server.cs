@@ -91,7 +91,7 @@ namespace Riptide
 
         /// <summary>Stops the server if it's running and swaps out the transport it's using.</summary>
         /// <param name="newTransport">The new underlying transport server to use for sending and receiving data.</param>
-        /// <remarks>This method does not automatically restart the server. To continue accepting connections, <see cref="Start(ushort, ushort, byte, bool)"/> must be called again.</remarks>
+        /// <remarks>This method does not automatically restart the server. To continue accepting connections, <see cref="Start(ushort, ushort, byte, bool, bool)"/> must be called again.</remarks>
         public void ChangeTransport(IServer newTransport)
         {
             Stop();
@@ -103,6 +103,7 @@ namespace Riptide
         /// <param name="maxClientCount">The maximum number of concurrent connections to allow.</param>
         /// <param name="messageHandlerGroupId">The ID of the group of message handler methods to use when building <see cref="messageHandlers"/>.</param>
         /// <param name="useMessageHandlers">Whether or not the server should use the built-in message handler system.</param>
+        /// <param name="debugRpcCalls">Whether or not the server should debug incoming RPC calls.</param>>
         /// <remarks>Setting <paramref name="useMessageHandlers"/> to <see langword="false"/> will disable the automatic detection and execution of methods with the <see cref="MessageHandlerAttribute"/>, which is beneficial if you prefer to handle messages via the <see cref="MessageReceived"/> event.</remarks>
         public void Start(ushort port, ushort maxClientCount, byte messageHandlerGroupId = 0, bool useMessageHandlers = true, bool debugRpcCalls = false)
         {

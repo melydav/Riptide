@@ -100,7 +100,7 @@ namespace Riptide
 
         /// <summary>Disconnects the client if it's connected and swaps out the transport it's using.</summary>
         /// <param name="newTransport">The new transport to use for sending and receiving data.</param>
-        /// <remarks>This method does not automatically reconnect to the server. To continue communicating with the server, <see cref="Connect(string, int, byte, Message, bool)"/> must be called again.</remarks>
+        /// <remarks>This method does not automatically reconnect to the server. To continue communicating with the server, <see cref="Connect(string, int, byte, Message, bool, bool, ushort)"/> must be called again.</remarks>
         public void ChangeTransport(IClient newTransport)
         {
             Disconnect();
@@ -114,6 +114,7 @@ namespace Riptide
         /// <param name="message">Data that should be sent to the server with the connection attempt. Use <see cref="Message.Create()"/> to get an empty message instance.</param>
         /// <param name="useMessageHandlers">Whether or not the client should use the built-in message handler system.</param>
         /// <param name="useRpcs">Whether or not the client should be able to use rpcs.</param>
+        /// <param name="rpcMask">The mask the client should execute RPCs on.</param>>
         /// <remarks>
         ///   <para>Riptide's default transport expects the host address to consist of an IP and port, separated by a colon. For example: <c>127.0.0.1:7777</c>. If you are using a different transport, check the relevant documentation for what information it requires in the host address.</para>
         ///   <para>Setting <paramref name="useMessageHandlers"/> to <see langword="false"/> will disable the automatic detection and execution of methods with the <see cref="MessageHandlerAttribute"/>, which is beneficial if you prefer to handle messages via the <see cref="MessageReceived"/> event.</para>
